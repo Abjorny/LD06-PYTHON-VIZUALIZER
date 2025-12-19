@@ -10,12 +10,12 @@ class LD06_Vizualizer:
         self.height = height
         self.ldWS = ldWS
 
-    def formatSolidImage(self):
+    def __formatSolidImage(self):
         image = np.zeros((self.height, self.width, 3), dtype=np.uint8)
         return image 
     
     def __formatStartImage(self):
-        image = self.formatSolidImage()
+        image = self.__formatSolidImage()
         cx, cy = self.width // 2, self.height // 2
         color = (255, 255, 0)
         cv2.circle(image, (cx, cy), 10, color, 3)
@@ -56,7 +56,7 @@ class LD06_Vizualizer:
         return image, pointsData
 
     def getMap(self, points, scale = 1):
-        image = self.formatSolidImage()
+        image = self.__formatSolidImage()
 
         contour = []
         pv = []
@@ -101,3 +101,6 @@ class LD06_Vizualizer:
                 x,y,w,h = x1,y1,w1,h1
         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 1)
         return image 
+    
+    def getGrafik(self, points, scale = 1):
+        image = self.__formatSolidImage()
