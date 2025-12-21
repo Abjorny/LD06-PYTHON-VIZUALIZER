@@ -1,6 +1,5 @@
 from Ld06WebSocket.LD06 import LD06_WebSocket
 from Ld06Vizualizer.Vizualizer import LD06_Vizualizer
-import matplotlib.pyplot as plt
 import cv2, math
 import numpy as np
 
@@ -16,9 +15,15 @@ def anglePoint(one, two):
     angle =  math.degrees(math.acos(value))
     return angle
 
-def kofLine(one, two):
-    value = (one[0] * two[0] + one[1] * two[1])/ ((one[0] ** 2 + one[1] ** 2)**0.5 * (two[0] ** 2 + two[1] ** 2)**0.5)
-    return value
+def line_k(p1, p2):
+    dx = p2[0] - p1[0]
+    dy = p2[1] - p1[1]
+    if abs(dx) < 1e-6:
+        return None
+    
+    return dy / dx
+
+
 
 def checkPerpendicular(l1, l2):
     if l1 == l2:
@@ -64,6 +69,22 @@ def getLenLine(line):
     d = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
     return d
 
+def direction_from_points(p1, p2):
+    v = np.array(p2) - np.array(p1)
+    n = np.linalg.norm(v)
+    if n < 1e-6:
+        return None
+    return v / n
+
+def build_line(p0, dir, length, scale):
+    x0, y0 = p0
+    dx, dy = dir
+    length = length * scale 
+    x1 = int(x0 + dx * length)
+    y1 = int(y0 + dy * length)
+    return (x0, y0), (x1, y1)
+
+
 def dostroitLine(line, scale, target, reverse = False):
     if not reverse:
         x0, y0 = line[-1]
@@ -71,8 +92,8 @@ def dostroitLine(line, scale, target, reverse = False):
         x0, y0 = line[0]
     dx = line[-1][0] - line[0][0]
     dy = line[-1][1] - line[0][1]
-
     norm = math.hypot(dx, dy)
+
     if norm < 1e-6:
         return None
 
@@ -91,21 +112,26 @@ def dostroitLine(line, scale, target, reverse = False):
 
     return (x0, y0), (x1, y1)
 
-def dostroitLineCoords(line, x, y):
-    sx = line[0][0]
-    sy = line[0][1]
-    
-    ex = line[-1][0]
-    ey = line[-1][1]
+def line_direction(line):
+    pts = np.array(line)
+    mean = pts.mean(axis=0)
+    _, _, vh = np.linalg.svd(pts - mean)
+    return vh[0]
 
-    kof = kofLine([sx, sy], [ex, ey])
-    if kof < 0:
-        line[-1][0] = x
-        line[-1][1] = y
+
+def project_point_to_line(p, line):
+    p = np.array(p)
+    a = np.array(line[0])
+    d = line_direction(line)
+    t = np.dot(p - a, d)
+    return a + d * t
+def dostroitLineCoords(line, x, y):
+    proj = project_point_to_line((x, y), line)
+
+    if np.dot(proj - line[0], line_direction(line)) > 0:
+        return [line[0], proj.astype(int).tolist()]
     else:
-        line[0][0] = x
-        line[0][1] = y
-    return line
+        return [proj.astype(int).tolist(), line[-1]]
 
 while True:
     lines = []
@@ -145,7 +171,7 @@ while True:
                 else:
                     newk = 0
                 if abs( newk - startk ) < 5:
-                    if  raz_x < 10 and raz_y < 10:
+                    if  raz_x < 8 and raz_y < 8:
                         line.append(points[i])
                     else:
                         break
@@ -171,19 +197,33 @@ while True:
 
     lineOne = filterLines[-1][0]
     lineTwo = filterLines[-1][1]
-
+    
     lineOne = dostroitLineCoords(lineOne, x, y)
     lineTwo = dostroitLineCoords(lineTwo, x, y)
 
-    cv2.line(image2, lineOne[0], lineOne[-1], (0,255,255), 3)
-    cv2.line(image2, lineTwo[0], lineTwo[-1], (255,0,0), 3)
+    cv2.line(image2, lineOne[0], lineOne[-1], (0,255,255), 5)
+    cv2.line(image2, lineTwo[0], lineTwo[-1], (255,0,0), 5)
+    
 
-    one, two = dostroitLine(lineOne, scale, 2.4)
-    dostroitLineCoords(lineTwo, x, y)
-    cv2.line(image2, one, two, (255, 255, 0), 5)
+    try:
+        one1, two1 = dostroitLine(lineOne, scale, 2.4)
+        dir1 = direction_from_points(lineOne[0], lineOne[-1])
+        cv2.line(image2, one1, two1, (0, 255, 0), 5)
 
-    one, two = dostroitLine(lineTwo, scale, 1.8, 1)
-    cv2.line(image2, one, two, (255, 255, 0), 5)
+        one2, two2 = dostroitLine(lineTwo, scale, 1.8, 1)
+        cv2.line(image2, one2, two2, (255, 255, 0), 5)
+
+        dir2 = direction_from_points(lineTwo[-1], lineTwo[0])
+
+        p1, p2 = build_line(two1, dir2, 1.8, scale)
+        p3, p4 = build_line(two2, dir1, 2.4, scale)
+        cv2.line(image2, p1, p2, (0, 255, 0), 5)
+        cv2.line(image2, p3, p4, (0, 255, 0), 5)
+    except:
+        pass
+
+
     cv2.imshow("image", image)
     cv2.imshow("image2", image2)
     cv2.waitKey(1)
+

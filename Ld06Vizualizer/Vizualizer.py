@@ -1,7 +1,6 @@
 import cv2, math
 import numpy as np
 from Ld06WebSocket.LD06 import LD06_WebSocket
-import matplotlib.pyplot as plt
 
 class LD06_Vizualizer:
     def __init__(self, maxRange, width, height, ldWS: LD06_WebSocket):
