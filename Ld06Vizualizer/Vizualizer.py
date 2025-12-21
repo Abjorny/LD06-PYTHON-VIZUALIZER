@@ -53,7 +53,7 @@ class LD06_Vizualizer:
             cv2.circle(image, (x, y), 2, (0, 0, 255), -1)
             pointsData.append([x, y])
         
-        return image, pointsData
+        return image, pointsData, scale
 
     def getMap(self, points, scale = 1):
         image = self.formatSolidImage()
