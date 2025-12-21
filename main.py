@@ -18,11 +18,10 @@ def anglePoint(one, two):
 
 def kofLine(one, two):
     value = (one[0] * two[0] + one[1] * two[1])/ ((one[0] ** 2 + one[1] ** 2)**0.5 * (two[0] ** 2 + two[1] ** 2)**0.5)
-    # angle =  math.degrees(math.acos(value))
     return value
 
 def checkPerpendicular(l1, l2):
-    if l1 is l2:
+    if l1 == l2:
         return False
 
     v1 = np.array(l1[-1]) - np.array(l1[0])
@@ -92,6 +91,22 @@ def dostroitLine(line, scale, target, reverse = False):
 
     return (x0, y0), (x1, y1)
 
+def dostroitLineCoords(line, x, y):
+    sx = line[0][0]
+    sy = line[0][1]
+    
+    ex = line[-1][0]
+    ey = line[-1][1]
+
+    kof = kofLine([sx, sy], [ex, ey])
+    if kof < 0:
+        line[-1][0] = x
+        line[-1][1] = y
+    else:
+        line[0][0] = x
+        line[0][1] = y
+    return line
+
 while True:
     lines = []
     filterLines = []
@@ -156,10 +171,15 @@ while True:
 
     lineOne = filterLines[-1][0]
     lineTwo = filterLines[-1][1]
+
+    lineOne = dostroitLineCoords(lineOne, x, y)
+    lineTwo = dostroitLineCoords(lineTwo, x, y)
+
     cv2.line(image2, lineOne[0], lineOne[-1], (0,255,255), 3)
     cv2.line(image2, lineTwo[0], lineTwo[-1], (255,0,0), 3)
 
     one, two = dostroitLine(lineOne, scale, 2.4)
+    dostroitLineCoords(lineTwo, x, y)
     cv2.line(image2, one, two, (255, 255, 0), 5)
 
     one, two = dostroitLine(lineTwo, scale, 1.8, 1)
