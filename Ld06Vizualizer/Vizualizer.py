@@ -50,7 +50,7 @@ class LD06_Vizualizer:
             y = cy + int(dist * math.sin(rad))
 
             cv2.circle(image, (x, y), 2, (0, 0, 255), -1)
-            pointsData.append([x, y])
+            pointsData.append((x, y))
         
         return image, pointsData, scale
 
