@@ -99,4 +99,4 @@ class LD06_Vizualizer:
             if w1 * h1 > w * h:
                 x,y,w,h = x1,y1,w1,h1
         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 1)
-        return image 
+        return image, w, h

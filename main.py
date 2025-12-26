@@ -19,7 +19,7 @@ while True:
     filterLines: list[tuple[Line, Line]] = []
     
     image, points, scale = ldViz.getVizualizerImage()
-    image2 = ldViz.getMap(points, 1)
+    image2, w, h = ldViz.getMap(points, 1)
 
     i = 0
 
@@ -77,26 +77,49 @@ while True:
 
     dot = LineMath.get_dot_peres(lineOne, lineTwo)
 
-    newLine = LineMath.build_line(dot, lineTwo.k, scale, -1.8)
-    newLine.draw(image2, (0, 255, 255), 2)
 
-    newLine = LineMath.build_line(dot, lineOne.k, scale, -2.4)
-    newLine.draw(image2, (0, 255, 255), 2)
+    if w > h:
+        newLine = LineMath.build_line(dot, lineTwo.k, scale, -2.4)
+        newLine.draw(image2, (0, 255, 255), 2)
 
-    newLine = LineMath.build_line(newLine.p2, lineTwo.k, scale, -1.8)
-    newLine.draw(image2, (0, 255, 255), 2)
-    pointPtwo = LineMath.get_dot_perpend(pcenter, newLine)
+        newLine = LineMath.build_line(dot, lineOne.k, scale, -1.8)
+        newLine.draw(image2, (0, 255, 255), 2)
+        newLine = LineMath.build_line(newLine.p2, lineTwo.k, scale, -2.4)
+        newLine.draw(image2, (0, 255, 255), 2)
+        
+        pointPtwo = LineMath.get_dot_perpend(pcenter, newLine)
 
-    newLine = LineMath.build_line(newLine.p2, lineOne.k, scale, 2.4)
-    newLine.draw(image2, (0, 255, 255), 2)
+        newLine = LineMath.build_line(newLine.p2, lineOne.k, scale, 1.8)
+        newLine.draw(image2, (0, 255, 255), 2)
 
-    pointPone = LineMath.get_dot_perpend(pcenter, newLine)
-    
-    linePeprendX = Line([pcenter, pointPtwo])
-    linePeprendX.draw(image2, thick = 2)
+        pointPone = LineMath.get_dot_perpend(pcenter, newLine)
 
-    linePeprendY = Line([pcenter, pointPone])
-    linePeprendY.draw(image2, thick = 2)
+        linePeprendY = Line([pcenter, pointPtwo])
+        linePeprendY.draw(image2, thick = 2)
+
+        linePeprendX = Line([pcenter, pointPone])
+        linePeprendX.draw(image2, thick = 2)
+    else:
+        newLine = LineMath.build_line(dot, lineTwo.k, scale, -1.8)
+        newLine.draw(image2, (0, 255, 255), 2)
+
+        newLine = LineMath.build_line(dot, lineOne.k, scale, -2.4)
+        newLine.draw(image2, (0, 255, 255), 2)
+
+        newLine = LineMath.build_line(newLine.p2, lineTwo.k, scale, -1.8)
+        newLine.draw(image2, (0, 255, 255), 2)
+        
+        pointPtwo = LineMath.get_dot_perpend(pcenter, newLine)
+
+        newLine = LineMath.build_line(newLine.p2, lineOne.k, scale, 2.4)
+        newLine.draw(image2, (0, 255, 255), 2)
+        pointPone = LineMath.get_dot_perpend(pcenter, newLine)
+
+        linePeprendX = Line([pcenter, pointPtwo])
+        linePeprendX.draw(image2, thick = 2)
+
+        linePeprendY = Line([pcenter, pointPone])
+        linePeprendY.draw(image2, thick = 2)
 
     cv2.putText(image2, f"X: {int(linePeprendX.length)}, Y: {int(linePeprendY.length)}", (30, 30), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 1)
     print(f"X: {int(linePeprendX.length)}, Y: {int(linePeprendY.length)}")
