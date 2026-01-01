@@ -50,7 +50,7 @@ while True:
                 else:
                     newk = 0
                 if abs( newk - startk ) < 5:
-                    if  raz_x < 6 and raz_y < 6:
+                    if  raz_x < 7 and raz_y < 7:
                         line.append(points[i])
                     else:
                         break
@@ -63,67 +63,45 @@ while True:
                     break
         if len(line) > 15:
             lines.append(Line(line))
+    
+
     for line1 in lines:
         for line2 in lines:
             if line2 != line1 and line2 not in perpendLines:
                 if LineMath.is_perpindicular(line1, line2):
                     perpendLines.append((line1, line2))
-
-    filterLines = sorted(perpendLines, key = lambda paraline: paraline[0].length + paraline[1].length)
-    lineOne, lineTwo = filterLines[-1]
     
-    lineOne.draw(image2)
-    lineTwo.draw(image2)
+    filterLines = sorted(perpendLines, key = lambda paraline: paraline[0].length + paraline[1].length)
+    if filterLines:
+        lineOneS, lineTwoS = filterLines[-1]
+        if not LineMath.get_horizontal_line(lineOneS):
+            lineOneS, lineTwoS = lineTwoS, lineOneS
 
-    dot = LineMath.get_dot_peres(lineOne, lineTwo)
+        lineOneS.draw(image2, thick=2)
+        lineTwoS.draw(image2, thick=2)
 
 
-    if w > h:
-        newLine = LineMath.build_line(dot, lineTwo.k, scale, -2.4)
-        newLine.draw(image2, (0, 255, 255), 2)
+        dot = LineMath.get_dot_peres(lineOneS, lineTwoS)
+        first = Line([dot, lineOneS.p1])
+        two  = Line([dot, lineTwoS.p1])
+        if w < h:
+            first = LineMath.build_line(dot, first, scale, 1.8)
+            two = LineMath.build_line(dot, two, scale, 2.4)
+        first.draw(image2)
+        two.draw(image2)
 
-        newLine = LineMath.build_line(dot, lineOne.k, scale, -1.8)
-        newLine.draw(image2, (0, 255, 255), 2)
-        newLine = LineMath.build_line(newLine.p2, lineTwo.k, scale, -2.4)
-        newLine.draw(image2, (0, 255, 255), 2)
+        # lineOne = LineMath.build_line(dot, lineOneS, scale, 1.8)
+        # lineTwo = LineMath.build_line(dot, lineTwoS, sca-le, 1.8)
         
-        pointPtwo = LineMath.get_dot_perpend(pcenter, newLine)
-
-        newLine = LineMath.build_line(newLine.p2, lineOne.k, scale, 1.8)
-        newLine.draw(image2, (0, 255, 255), 2)
-
-        pointPone = LineMath.get_dot_perpend(pcenter, newLine)
-
-        linePeprendY = Line([pcenter, pointPtwo])
-        linePeprendY.draw(image2, thick = 2)
-
-        linePeprendX = Line([pcenter, pointPone])
-        linePeprendX.draw(image2, thick = 2)
-    else:
-        newLine = LineMath.build_line(dot, lineTwo.k, scale, -1.8)
-        newLine.draw(image2, (0, 255, 255), 2)
-
-        newLine = LineMath.build_line(dot, lineOne.k, scale, -2.4)
-        newLine.draw(image2, (0, 255, 255), 2)
-
-        newLine = LineMath.build_line(newLine.p2, lineTwo.k, scale, -1.8)
-        newLine.draw(image2, (0, 255, 255), 2)
+        # lineOne.draw(image2, thick=7)
+        # lineTwo.draw(image2, thick=7)
         
-        pointPtwo = LineMath.get_dot_perpend(pcenter, newLine)
-
-        newLine = LineMath.build_line(newLine.p2, lineOne.k, scale, 2.4)
-        newLine.draw(image2, (0, 255, 255), 2)
-        pointPone = LineMath.get_dot_perpend(pcenter, newLine)
-
-        linePeprendX = Line([pcenter, pointPtwo])
-        linePeprendX.draw(image2, thick = 2)
-
-        linePeprendY = Line([pcenter, pointPone])
-        linePeprendY.draw(image2, thick = 2)
-
-    cv2.putText(image2, f"X: {int(linePeprendX.length)}, Y: {int(linePeprendY.length)}", (30, 30), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 1)
-    print(f"X: {int(linePeprendX.length)}, Y: {int(linePeprendY.length)}")
-    cv2.circle(image2, pcenter, 3, (255, 0, 0), 3)
-    cv2.circle(image2, (int(dot[0]), int(dot[1])), 3, (0, 0, 255), 5)
+        # lineOne = LineMath.build_line(dot, lineOneS, scale, 2.4)
+        # lineTwo = LineMath.build_line(dot, lineTwoS, scale, 2.4)
+        
+        # lineOne.draw(image2, (0, 0, 255))
+        # lineTwo.draw(image2, (0, 0, 255))
+        cv2.circle(image2, np.astype(dot, int), 5, (255, 0, 0), 3)
+    
     cv2.imshow("Vizualizer", image2)
     cv2.waitKey(1)
