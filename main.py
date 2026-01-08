@@ -10,8 +10,12 @@ height = 700
 
 pcenter = (width // 2, height // 2)
 
-ldWS = LD06_WebSocket()
+ldWS = LD06_WebSocket(url="ws://0.0.0.0:8000/ws")
 ldViz = LD06_Vizualizer(maxRange, width, height, ldWS)
+x, y = 0, 0
+
+def get_my_side():
+    return "left"
 
 while True:
     lines: list[Line] = []
@@ -74,34 +78,51 @@ while True:
     filterLines = sorted(perpendLines, key = lambda paraline: paraline[0].length + paraline[1].length)
     if filterLines:
         lineOneS, lineTwoS = filterLines[-1]
+
         if not LineMath.get_horizontal_line(lineOneS):
             lineOneS, lineTwoS = lineTwoS, lineOneS
 
-        lineOneS.draw(image2, thick=2)
-        lineTwoS.draw(image2, thick=2)
-
-
         dot = LineMath.get_dot_peres(lineOneS, lineTwoS)
-        first = Line([dot, lineOneS.p1])
-        two  = Line([dot, lineTwoS.p1])
-        if w < h:
-            first = LineMath.build_line(dot, first, scale, 1.8)
-            two = LineMath.build_line(dot, two, scale, 2.4)
-        first.draw(image2)
-        two.draw(image2)
+        if np.linalg.norm(lineOneS.p1 - dot) > np.linalg.norm(lineOneS.p2 - dot):
+            p2_first = lineOneS.p1
+        else:
+            p2_first = lineOneS.p2
 
-        # lineOne = LineMath.build_line(dot, lineOneS, scale, 1.8)
-        # lineTwo = LineMath.build_line(dot, lineTwoS, sca-le, 1.8)
-        
-        # lineOne.draw(image2, thick=7)
-        # lineTwo.draw(image2, thick=7)
-        
-        # lineOne = LineMath.build_line(dot, lineOneS, scale, 2.4)
-        # lineTwo = LineMath.build_line(dot, lineTwoS, scale, 2.4)
-        
-        # lineOne.draw(image2, (0, 0, 255))
-        # lineTwo.draw(image2, (0, 0, 255))
+        if np.linalg.norm(lineTwoS.p1 - dot) > np.linalg.norm(lineTwoS.p2 - dot):
+            p2_two = lineTwoS.p1
+        else:
+            p2_two = lineTwoS.p2
+
+        if w < h:
+            first = LineMath.build_line(dot, p2_first, scale, 1.8)
+            two = LineMath.build_line(dot, p2_two, scale, 2.4)
+            three = LineMath.build_by_direction(two.p2, first.direction, scale, 1.8)
+            four = Line([three.p2, first.p2])
+        else:
+            two = LineMath.build_line(dot, p2_first, scale, 2.4)
+            first = LineMath.build_line(dot, p2_two, scale, 1.8)
+            four = LineMath.build_by_direction(first.p2, two.direction, scale, 2.4)
+            three = Line([four.p2, two.p2])
+
+        itogLines: list[Line] = [first, three]
+
+        two.draw(image2, (0, 255, 0))
+        four.draw(image2)
+
+        first, three = LineMath.get_my_line(itogLines, get_my_side())
+
+        ft = LineMath.build_perpendicular(pcenter, first)
+        rt = LineMath.build_perpendicular(pcenter, two)
+
+        ft.draw(image2, (0, 255, 0))
+        rt.draw(image2, (0, 255, 0))
+        x, y = ft.length, rt.length
+
+        first.draw(image2, (0, 255, 0))
+        three.draw(image2)
         cv2.circle(image2, np.astype(dot, int), 5, (255, 0, 0), 3)
-    
+
+    cv2.putText(image2, text = f"X: {int(x)}, Y: {int(y)}", org = [20, 50], fontFace=cv2.FONT_HERSHEY_COMPLEX, fontScale=1, color=(0, 0, 255))
+    cv2.circle(image2, pcenter, 5, (0, 0, 255), 3)
     cv2.imshow("Vizualizer", image2)
     cv2.waitKey(1)

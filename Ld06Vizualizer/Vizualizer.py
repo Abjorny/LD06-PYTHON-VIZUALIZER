@@ -44,8 +44,8 @@ class LD06_Vizualizer:
                 distVal = self.maxRange
             
             rad = (point.angle + 90) * math.pi / 180
-            dist = distVal * scale
-
+            dist = distVal * scale 
+            
             x = cx + int(dist * math.cos(rad))
             y = cy + int(dist * math.sin(rad))
 
