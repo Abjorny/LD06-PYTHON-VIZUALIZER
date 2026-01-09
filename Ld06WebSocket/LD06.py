@@ -11,7 +11,7 @@ class LD06_Point:
 class LD06_WebSocket:
     def __init__(self, url="ws://192.168.43.232:8000/ws"):
         self.points: list[LD06_Point] = []
-        with open('points_data1.txt', 'r', encoding='utf-8') as file:
+        with open('tests/points_data1.txt', 'r', encoding='utf-8') as file:
             lines = file.read().splitlines()
             i = 1
             for line in lines:
