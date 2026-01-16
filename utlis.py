@@ -122,7 +122,7 @@ class LineMath:
         return kresult
     
     @staticmethod
-    def get_my_line(lines: list[Line], my: str):
+    def get_my_line_x(lines: list[Line], my: str):
         first = lines[0]
         two = lines[1]
         dx = abs(first.cp[0] - two.cp[0])
@@ -147,6 +147,37 @@ class LineMath:
                     return first, two
             else:
                 if my == "left":
+                    return first, two
+                else:
+                    return two, first
+
+
+    @staticmethod
+    def get_my_line_y(lines: list[Line], my: str):
+        first = lines[0]
+        two = lines[1]
+        dx = abs(first.cp[0] - two.cp[0])
+        dy = abs(first.cp[1] - two.cp[1])
+        if dx > dy:
+            if first.cp[0] > two.cp[0]:
+                if my == "right":
+                    return two, first
+                else:
+                    return first, two
+            else:
+                if my == "left":
+                    return first, two
+                else:
+                    return two, first
+        
+        else:
+            if first.cp[1] > two.cp[1]:
+                if my == "left":
+                    return two, first
+                else:
+                    return first, two
+            else:
+                if my == "right":
                     return first, two
                 else:
                     return two, first
