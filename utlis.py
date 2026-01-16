@@ -160,7 +160,7 @@ class LineMath:
         dy = abs(first.cp[1] - two.cp[1])
         if dx > dy:
             if first.cp[0] > two.cp[0]:
-                if my == "right":
+                if my == "left":
                     return two, first
                 else:
                     return first, two
@@ -177,7 +177,7 @@ class LineMath:
                 else:
                     return first, two
             else:
-                if my == "right":
+                if my == "left":
                     return first, two
                 else:
                     return two, first
