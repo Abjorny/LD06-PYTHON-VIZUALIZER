@@ -94,7 +94,6 @@ class LD06_Vizualizer:
         )
         x, y, w, h = 0, 0, 0, 0 
         for countur in counturs:
-            area = cv2.contourArea(countur)
             x1,y1,w1,h1 = cv2.boundingRect(countur)
             if w1 * h1 > w * h:
                 x,y,w,h = x1,y1,w1,h1

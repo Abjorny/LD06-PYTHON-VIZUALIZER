@@ -129,11 +129,12 @@ class RobotView():
             y_line_one, y_line_two = LineMath.get_my_line_y(y_lines, self.get_my_side())
 
             ft = LineMath.build_perpendicular(self.pcenter, x_line_one)
-            rt = LineMath.build_perpendicular(self.pcenter, y_line_one)
+            rt= LineMath.build_perpendicular(self.pcenter, y_line_one)
 
             ft.draw(image2, (0, 255, 0))
             rt.draw(image2, (0, 255, 0))
-            x, y = ft.length, rt.length
+
+            x, y = int(ft.length), int(rt.length)
 
             if ( self.last_x == None and self.last_y == None ) or self.incorects <= 0:
                 self.last_x, self.last_y= x, y
@@ -153,9 +154,24 @@ class RobotView():
             y_line_one.draw(image2, (0, 255, 0))
             y_line_two.draw(image2)
             x_line_two.draw(image2)
+
+            robot_line = Line([self.pcenter,[self.pcenter[0], 0]])
+            robot_line.draw(image2, thick = 2, color = (255, 255, 0))
+
             cv2.circle(image2, np.astype(dot, int), 5, (255, 0, 0), 3)
-
         cv2.circle(image2, self.pcenter, 5, (0, 0, 255), 3)
-        return image2, f"X: {int(self.last_x)}, Y: {int(self.last_y)}"
+        if x and y:
+            cv2.putText(image2, f"X: {int(x)}, Y: {int(y)}", (5, 15), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (255, 0, 0))
+        return image2, x, y
     
+robot = RobotView()
+map_mass = [[0] * 240] * 180
 
+x, y = 10, 15
+while 1:
+    image, x, y = robot.view()
+    image2 = np.zeros((180, 240, 3), dtype=np.uint8)
+    cv2.circle(image2, (x, y), 5, (0, 255, 255), -1)
+    cv2.imshow("test", image)
+    cv2.imshow("test2", image2)
+    cv2.waitKey(1)

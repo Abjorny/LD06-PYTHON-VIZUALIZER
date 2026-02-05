@@ -65,7 +65,7 @@ class VideoWebSocketServer:
             for ws in dead:
                 self.clients.discard(ws)
 
-            await asyncio.sleep(0)  # без лимита FPS
+            await asyncio.sleep(0)  
 
     async def start(self, host="0.0.0.0", port=8002):
         print(f"WebSocket сервер запущен на {host}:{port}")
