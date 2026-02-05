@@ -2,7 +2,85 @@ from Ld06WebSocket.LD06 import LD06_WebSocket
 from Ld06Vizualizer.Vizualizer import LD06_Vizualizer
 import cv2
 import numpy as np
+import math
 from utlis import Line, LineMath
+
+
+def line_from_point_angle(p_start, angle_deg, length):
+    angle_rad = math.radians(angle_deg)
+    x0, y0 = p_start
+
+    x1 = x0 + length * math.sin(angle_rad)
+    y1 = y0 - length * math.cos(angle_rad)
+
+    return np.array([int(x1), int(y1)])
+
+import math
+
+_prev_angle_error = 0
+
+def mecanum_pd(x, y, angle_cur, tx, ty,
+               min_speed=50,
+               max_speed=150,
+               kp_angle=0.02,
+               kd_angle=0.01):
+
+    global _prev_angle_error
+
+    dx = tx - x
+    dy = ty - y
+
+    distance = math.hypot(dx, dy)
+    if distance < 1e-2:
+        return [0, 0, 0, 0]
+
+    angle_target = math.degrees(math.atan2(dx, dy))
+
+    error = angle_target - angle_cur
+    error = (error + 180) % 360 - 180
+
+    d_error = error - _prev_angle_error
+    _prev_angle_error = error
+
+    w = kp_angle * error + kd_angle * d_error
+    w = max(-1.0, min(1.0, w))
+
+    speed = min(max_speed, distance)
+    if speed > 0:
+        speed = max(speed, min_speed)
+
+    vx = speed * math.sin(math.radians(angle_target))
+    vy = speed * math.cos(math.radians(angle_target))
+
+    fl =  vy + vx + w * max_speed
+    fr =  vy - vx - w * max_speed
+    rl =  vy - vx + w * max_speed
+    rr =  vy + vx - w * max_speed
+
+    max_val = max(abs(fl), abs(fr), abs(rl), abs(rr), max_speed)
+
+    return [
+        int(fl / max_val * max_speed),
+        int(fr / max_val * max_speed),
+        int(rl / max_val * max_speed),
+        int(rr / max_val * max_speed),
+    ]
+
+def get_angle(p_start, p_end, single=False, dif = 0):
+    dx, dy = p_end - p_start
+    angle = math.degrees(math.atan2(dy, dx))
+    angle += dif
+
+    if not single:
+        if angle > 180:
+            angle -= 360
+        elif angle < -180:
+            angle += 360
+        return angle
+
+    angle = angle % 360
+    if angle > 180:
+        angle -= 360
 
 
 class RobotView():
@@ -27,8 +105,11 @@ class RobotView():
     def get_my_side(self):
         return "left"
     
+
+        return angle
+
     def view(self):
-        x, y = 0, 0
+        x, y, angle = 0, 0, 0
 
         lines: list[Line] = []
         perpendLines: list[tuple[Line, Line]] = []
@@ -132,7 +213,7 @@ class RobotView():
             rt= LineMath.build_perpendicular(self.pcenter, y_line_one)
 
             ft.draw(image2, (0, 255, 0))
-            rt.draw(image2, (0, 255, 0))
+            rt.draw(image2, (0, 255, 255))
 
             x, y = int(ft.length), int(rt.length)
 
@@ -151,27 +232,38 @@ class RobotView():
                     self.incorects = self.incorects - 1
 
             x_line_one.draw(image2, (0, 255, 0))
-            y_line_one.draw(image2, (0, 255, 0))
+            y_line_one.draw(image2, (0, 255, 255 ))
+
             y_line_two.draw(image2)
             x_line_two.draw(image2)
 
             robot_line = Line([self.pcenter,[self.pcenter[0], 0]])
             robot_line.draw(image2, thick = 2, color = (255, 255, 0))
+            angle = get_angle(self.pcenter, ft.p2)
 
             cv2.circle(image2, np.astype(dot, int), 5, (255, 0, 0), 3)
         cv2.circle(image2, self.pcenter, 5, (0, 0, 255), 3)
         if x and y:
             cv2.putText(image2, f"X: {int(x)}, Y: {int(y)}", (5, 15), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (255, 0, 0))
-        return image2, x, y
+        return image2, x, y, angle
     
 robot = RobotView()
-map_mass = [[0] * 240] * 180
 
-x, y = 10, 15
+target_point = np.array([40, 90])
+
 while 1:
-    image, x, y = robot.view()
+    image, x, y, angle = robot.view()
     image2 = np.zeros((180, 240, 3), dtype=np.uint8)
-    cv2.circle(image2, (x, y), 5, (0, 255, 255), -1)
+    p_start = np.array([x, y])
+    
+    p_end = line_from_point_angle(p_start, angle, 20)
+    vector_robot = Line([p_start, p_end])
+    vector_robot.draw(image2)
+    
+    angle_dif = get_angle(p_start, target_point, dif=90 - angle)
+    print(angle_dif, angle)
+    cv2.circle(image2, (p_start), 5, (0, 255, 255), -1)
+    cv2.circle(image2, target_point, 5, (0, 0, 255), -1)
     cv2.imshow("test", image)
     cv2.imshow("test2", image2)
     cv2.waitKey(1)
