@@ -1,21 +1,9 @@
 from Ld06WebSocket.LD06 import LD06_WebSocket
 from Ld06Vizualizer.Vizualizer import LD06_Vizualizer
-import cv2
-import numpy as np
-import math
 from utlis import Line, LineMath
+import cv2, math
+import numpy as np
 
-
-def line_from_point_angle(p_start, angle_deg, length):
-    angle_rad = math.radians(angle_deg)
-    x0, y0 = p_start
-
-    x1 = x0 + length * math.sin(angle_rad)
-    y1 = y0 - length * math.cos(angle_rad)
-
-    return np.array([int(x1), int(y1)])
-
-import math
 
 _prev_angle_error = 0
 
@@ -62,8 +50,8 @@ def mecanum_pd(x, y, angle_cur, tx, ty,
     return [
         int(fl / max_val * max_speed),
         int(fr / max_val * max_speed),
-        int(rl / max_val * max_speed),
         int(rr / max_val * max_speed),
+        int(rl / max_val * max_speed),
     ]
 
 def get_angle(p_start, p_end, single=False, dif = 0):
@@ -81,6 +69,15 @@ def get_angle(p_start, p_end, single=False, dif = 0):
     angle = angle % 360
     if angle > 180:
         angle -= 360
+
+def line_from_point_angle(p_start, angle_deg, length):
+    angle_rad = math.radians(angle_deg)
+    x0, y0 = p_start
+
+    x1 = x0 + length * math.sin(angle_rad)
+    y1 = y0 - length * math.cos(angle_rad)
+
+    return np.array([int(x1), int(y1)])
 
 
 class RobotView():
@@ -249,12 +246,22 @@ class RobotView():
     
 robot = RobotView()
 
-target_point = np.array([40, 90])
 
 while 1:
+    target_point = np.array([120, 120])
+
     image, x, y, angle = robot.view()
-    image2 = np.zeros((180, 240, 3), dtype=np.uint8)
-    p_start = np.array([x, y])
+    width = 640
+    height = 480
+    
+    max_x = 240
+    max_y = 180
+
+    mashtab = np.array([width / max_x, height / max_y])
+    target_point = mashtab * target_point
+
+    image2 = np.zeros((height, width, 3), dtype=np.uint8)
+    p_start = mashtab * np.array([x, y])
     
     p_end = line_from_point_angle(p_start, angle, 20)
     vector_robot = Line([p_start, p_end])
@@ -262,8 +269,8 @@ while 1:
     
     angle_dif = get_angle(p_start, target_point, dif=90 - angle)
     print(angle_dif, angle)
-    cv2.circle(image2, (p_start), 5, (0, 255, 255), -1)
-    cv2.circle(image2, target_point, 5, (0, 0, 255), -1)
+    cv2.circle(image2, p_start.astype(int), 5, (0, 255, 255), -1)
+    cv2.circle(image2, target_point.astype(int), 5, (0, 0, 255), -1)
     cv2.imshow("test", image)
     cv2.imshow("test2", image2)
     cv2.waitKey(1)
