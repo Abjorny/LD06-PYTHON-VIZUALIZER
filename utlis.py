@@ -38,6 +38,60 @@ class LineMath:
     def get_len(line: Line):
         return np.linalg.norm(line.p2 - line.p1)
     
+
+    @staticmethod
+    def are_parallel(line_one: Line, line_two: Line, angle_eps_deg=5, coord_eps=50):
+        v1x = line_one.p2[0] - line_one.p1[0]
+        v1y = line_one.p2[1] - line_one.p1[1]
+
+        v2x = line_two.p2[0] - line_two.p1[0]
+        v2y = line_two.p2[1] - line_two.p1[1]
+
+        len1 = math.hypot(v1x, v1y)
+        len2 = math.hypot(v2x, v2y)
+
+        if len1 == 0 or len2 == 0:
+            return False
+
+        cos_angle = (v1x * v2x + v1y * v2y) / (len1 * len2)
+        cos_angle = max(-1.0, min(1.0, cos_angle))
+        angle = math.degrees(math.acos(abs(cos_angle)))
+
+        if angle > angle_eps_deg:
+            return False
+
+        xs = [line_one.p1[0], line_one.p2[0], line_two.p1[0], line_two.p2[0]]
+        ys = [line_one.p1[1], line_one.p2[1], line_two.p1[1], line_two.p2[1]]
+
+        if max(xs) - min(xs) < coord_eps or max(ys) - min(ys) < coord_eps:
+            return False
+
+        return True
+
+
+
+    @staticmethod
+    def dist_between_lines(line_one: Line, line_two: Line):
+        x1, y1 = line_one.p1
+        x2, y2 = line_one.p2
+        x3, y3 = line_two.p1  
+
+        vx = x2 - x1
+        vy = y2 - y1
+
+        len_v = math.hypot(vx, vy)
+        if len_v == 0:
+            return 0.0
+
+        wx = x3 - x1
+        wy = y3 - y1
+
+        # длина перпендикуляра
+        cross = abs(vx * wy - vy * wx)
+
+        return cross / len_v
+
+    
     @staticmethod
     def is_perpindicular(line1: Line, line2: Line):
         return abs(line1.k * line2.k + 1) < 0.5 if line1.k and line2.k else False
@@ -151,7 +205,6 @@ class LineMath:
                 else:
                     return two, first
 
-
     @staticmethod
     def get_my_line_y(lines: list[Line], my: str):
         first = lines[0]
@@ -195,4 +248,3 @@ class LineMath:
         proj = line.p1 + t * ab
 
         return Line([point, proj])
-

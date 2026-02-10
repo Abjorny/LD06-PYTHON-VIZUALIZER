@@ -1,9 +1,12 @@
 from Ld06WebSocket.LD06 import LD06_WebSocket
 from Ld06Vizualizer.Vizualizer import LD06_Vizualizer
 from utlis import Line, LineMath
+from itertools import combinations
 import cv2, math
 import numpy as np
 
+porog_x = 180
+porog_y = 150
 
 _prev_angle_error = 0
 
@@ -101,9 +104,6 @@ class RobotView():
 
     def get_my_side(self):
         return "left"
-    
-
-        return angle
 
     def view(self):
         x, y, angle = 0, 0, 0
@@ -157,47 +157,95 @@ class RobotView():
                         break
             if len(line) > 15:
                 lines.append(Line(line))
-        
-        for line1 in lines:
-            for line2 in lines:
-                if line2 != line1 and line2 not in perpendLines:
-                    if LineMath.is_perpindicular(line1, line2):
-                        perpendLines.append((line1, line2))
-        
-        filterLines = sorted(perpendLines, key = lambda paraline: paraline[0].length + paraline[1].length)
-        
-        if len(filterLines) < 2:
+                
+        for line1, line2 in combinations(lines, 2):
+
+            if not LineMath.is_perpindicular(line1, line2):
+                continue
+
+            result = []
+            par_count = 0
+
+            for base_line in (line1, line2):
+                parallel_line = None
+                for other in lines:
+                    if base_line != other and LineMath.are_parallel(base_line, other):
+                        parallel_line = other
+                        par_count += 1
+                        break
+
+                result.append((base_line, parallel_line))
+            if par_count > 0:
+                perpendLines.append(result)
+                
+        filterLines = sorted(
+            perpendLines,
+            key=lambda item: item[0][0].length + item[1][0].length,
+            reverse=True
+        )
+
+
+        if len(filterLines) == 0:
             filterLines = self.last_filter_lines
         else:
             self.last_filter_lines = filterLines
-
         if filterLines:
-            lineOneS, lineTwoS = filterLines[-1]
+            first, two = filterLines[0]
+            
+            f_l, f_r = first
+            b_l, b_r = two
 
-            if not LineMath.get_horizontal_line(lineOneS):
-                lineOneS, lineTwoS = lineTwoS, lineOneS
+            f_l.draw(image2)
+            b_l.draw(image2)
+            
+            if f_r:
+                f_r.draw(image2)
+            if b_r:
+                b_r.draw(image2)
+            
 
-            dot = LineMath.get_dot_peres(lineOneS, lineTwoS)
-            if np.linalg.norm(lineOneS.p1 - dot) > np.linalg.norm(lineOneS.p2 - dot):
-                p2_first = lineOneS.p1
+            dot = LineMath.get_dot_peres(f_l, b_l)
+            cv2.circle(image2, dot.astype(int), 5, (255, 0, 255), -1)
+            
+            if np.linalg.norm(f_l.p1 - dot) > np.linalg.norm(f_l.p2 - dot):
+                p2_first = f_l.p1
             else:
-                p2_first = lineOneS.p2
+                p2_first = f_l.p2
 
-            if np.linalg.norm(lineTwoS.p1 - dot) > np.linalg.norm(lineTwoS.p2 - dot):
-                p2_two = lineTwoS.p1
+            if np.linalg.norm(b_l.p1 - dot) > np.linalg.norm(b_l.p2 - dot):
+                p2_two = b_l.p1
             else:
-                p2_two = lineTwoS.p2
+                p2_two = b_l.p2
 
-            if w < h:
-                first = LineMath.build_line(dot, p2_first, scale, 1.8)
-                two = LineMath.build_line(dot, p2_two, scale, 2.4)
-                three = LineMath.build_by_direction(two.p2, first.direction, scale, 1.8)
-                four = Line([three.p2, first.p2])
-            else:
-                two = LineMath.build_line(dot, p2_first, scale, 2.4)
-                first = LineMath.build_line(dot, p2_two, scale, 1.8)
-                four = LineMath.build_by_direction(first.p2, two.direction, scale, 2.4)
-                three = Line([four.p2, two.p2])
+
+
+            if f_r:
+                dist = LineMath.dist_between_lines(f_l, f_r)
+                if dist < 160:
+                    two = LineMath.build_line(dot, p2_first, scale, 2.4)
+                    first = LineMath.build_line(dot, p2_two, scale, 1.8)
+                    four = LineMath.build_by_direction(first.p2, two.direction, scale, 2.4)
+                    three = Line([four.p2, two.p2])
+                else:
+                    first = LineMath.build_line(dot, p2_first, scale, 1.8)
+                    two = LineMath.build_line(dot, p2_two, scale, 2.4)
+                    three = LineMath.build_by_direction(two.p2, first.direction, scale, 1.8)
+                    four = Line([three.p2, first.p2])
+                
+            elif b_r:
+                dist = LineMath.dist_between_lines(b_l, b_r)
+                if dist < 160:
+                    two = LineMath.build_line(dot, p2_first, scale, 2.4)
+                    first = LineMath.build_line(dot, p2_two, scale, 1.8)
+                    four = LineMath.build_by_direction(first.p2, two.direction, scale, 2.4)
+                    three = Line([four.p2, two.p2])
+                else:
+                    first = LineMath.build_line(dot, p2_first, scale, 1.8)
+                    two = LineMath.build_line(dot, p2_two, scale, 2.4)
+                    three = LineMath.build_by_direction(two.p2, first.direction, scale, 1.8)
+                    four = Line([three.p2, first.p2])
+
+
 
             x_lines: list[Line] = [first, three]
             y_lines: list[Line] = [two, four]
@@ -248,29 +296,6 @@ robot = RobotView()
 
 
 while 1:
-    target_point = np.array([120, 120])
-
     image, x, y, angle = robot.view()
-    width = 640
-    height = 480
-    
-    max_x = 240
-    max_y = 180
-
-    mashtab = np.array([width / max_x, height / max_y])
-    target_point = mashtab * target_point
-
-    image2 = np.zeros((height, width, 3), dtype=np.uint8)
-    p_start = mashtab * np.array([x, y])
-    
-    p_end = line_from_point_angle(p_start, angle, 20)
-    vector_robot = Line([p_start, p_end])
-    vector_robot.draw(image2)
-    
-    angle_dif = get_angle(p_start, target_point, dif=90 - angle)
-    print(angle_dif, angle)
-    cv2.circle(image2, p_start.astype(int), 5, (0, 255, 255), -1)
-    cv2.circle(image2, target_point.astype(int), 5, (0, 0, 255), -1)
     cv2.imshow("test", image)
-    cv2.imshow("test2", image2)
     cv2.waitKey(1)
